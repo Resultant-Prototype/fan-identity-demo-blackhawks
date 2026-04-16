@@ -13,7 +13,7 @@ def build_zone_polygon(data_zone: str, coords: list, fill: str, suite_level: boo
 def build_gate_circle(data_gate: str, cx: float, cy: float, fill: str, r: int = 16) -> str:
     return (
         f'    <circle class="gate-marker" data-gate="{data_gate}"\n'
-        f'            cx="{cx}" cy="{cy}" r="{r}"\n'
+        f'            cx="{round(cx, 1)}" cy="{round(cy, 1)}" r="{r}"\n'
         f'            fill="{fill}" stroke="white" stroke-width="2.5"/>'
     )
 
@@ -30,7 +30,7 @@ def build_gate_label(name: str, cx: float, cy: float, label_side: str, fill: str
     dx, base_dy, anchor, ldir = SIDE.get(label_side, (0, -12, 'middle', -1))
     parts = name.rsplit(' ', 1) if ' ' in name else [name]
     # For top/left labels, render last word first (closer to circle)
-    if label_side in ('top', 'left'):
+    if label_side in ('top',):
         parts = list(reversed(parts))
     lines = []
     for i, part in enumerate(parts):

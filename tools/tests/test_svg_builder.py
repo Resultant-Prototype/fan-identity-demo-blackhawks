@@ -30,7 +30,8 @@ def test_gate_label_top():
     assert 'text-anchor="middle"' in result
     # Label should be above the circle (lower y than cy=75)
     import re
-    ys = [int(m) for m in re.findall(r'y="(\d+)"', result)]
+    ys = [float(m) for m in re.findall(r'y="([\d.]+)"', result)]
+    assert len(ys) == 2, "expected two text elements"
     assert all(y < 75 for y in ys)
 
 def test_gate_label_left():
@@ -45,3 +46,14 @@ def test_north_indicator_contains_n():
     result = build_north_indicator(858, 75)
     assert ">N<" in result
     assert "marker-end" in result
+
+def test_gate_label_left_multiword_order():
+    result = build_gate_label("VIP Entry", 108, 360, "left", "#c41e3a")
+    # "VIP" should appear before (higher up, lower y) than "Entry"
+    import re
+    matches = re.findall(r'<text[^>]*y="([\d.]+)"[^>]*>(\w+)</text>', result)
+    assert len(matches) == 2
+    ys = [(float(y), word) for y, word in matches]
+    ys.sort(key=lambda t: t[0])  # sort by y ascending
+    assert ys[0][1] == "VIP", f"Expected 'VIP' first (lower y), got {ys[0][1]}"
+    assert ys[1][1] == "Entry", f"Expected 'Entry' second (higher y), got {ys[1][1]}"
