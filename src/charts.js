@@ -793,7 +793,7 @@ function renderTab2() {
   const timingDist = (type) => {
     const rows = GAME_TICKETS;
     const avg = rows.reduce((s, r) => {
-      if (type === 'lone_star') return s + 90;
+      if (type === 'stm') return s + 90;
       if (type === 'single_game') return s + r.avg_days_in_advance;
       return s + Math.max(1, r.avg_days_in_advance * 0.3);
     }, 0) / rows.length;
@@ -809,7 +809,7 @@ function renderTab2() {
     data: {
       labels: timingBuckets,
       datasets: [
-        { label: 'Lone Star Member', data: timingDist('lone_star'),   backgroundColor: PALETTE.navy,    borderRadius: 3 },
+        { label: TEAM.stmLabel,       data: timingDist('stm'),         backgroundColor: PALETTE.navy,    borderRadius: 3 },
         { label: 'Single Game',      data: timingDist('single_game'), backgroundColor: PALETTE.navySoft, borderRadius: 3 },
         { label: 'Secondary Market', data: timingDist('secondary'),   backgroundColor: PALETTE.gray,    borderRadius: 3 },
       ],
@@ -1049,7 +1049,7 @@ function renderTab2() {
     document.body.appendChild(zoneTip);
 
     const TICKET_TYPE_LABEL = {
-      lone_star:    'Lone Star',
+      stm:          TEAM.stmLabel,
       single_game:  'Single Game',
       secondary:    'Secondary Market',
     };
@@ -1597,11 +1597,11 @@ function renderTab4() {
 
   // ── Chart 2: Membership Tier vs. Cross-Channel Spend (scatter with jitter) ──
   destroyChart('t4-spendByTier');
-  const tierMap  = { lone_star: 0, single_game: 1, secondary: 2 };
+  const tierMap  = { stm: 0, single_game: 1, secondary: 2 };
   const tierCols = [PALETTE.navy, PALETTE.navySoft, PALETTE.gray];
   const tierDisplayLabels = ['Lone Star Member', 'Single Game', 'Secondary Market'];
 
-  const scatterDatasets = ['lone_star', 'single_game', 'secondary'].map((tier, ti) => {
+  const scatterDatasets = ['stm', 'single_game', 'secondary'].map((tier, ti) => {
     const fans4tier = fans4.filter(x => x.ticket_type === tier && x.total_cross_channel_spend != null);
     return {
       label: tierDisplayLabels[ti],
@@ -1619,7 +1619,7 @@ function renderTab4() {
   });
 
   // Mean markers per tier
-  const meanDataset = ['lone_star', 'single_game', 'secondary'].map((tier, ti) => {
+  const meanDataset = ['stm', 'single_game', 'secondary'].map((tier, ti) => {
     const vals = fans4.filter(x => x.ticket_type === tier && x.total_cross_channel_spend != null)
                        .map(x => x.total_cross_channel_spend);
     const mean = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
@@ -1743,7 +1743,7 @@ function renderTab4() {
             title: items => {
               const fan = top10[items[0]?.dataIndex];
               if (!fan) return '';
-              const tier = fan.ticket_type === 'lone_star' ? 'Lone Star Member' : fan.ticket_type === 'single_game' ? 'Single Game' : 'Secondary Market';
+              const tier = fan.ticket_type === 'stm' ? TEAM.stmLabel : fan.ticket_type === 'single_game' ? 'Single Game' : 'Secondary Market';
               return `${tier} · ${fan.seat_section || '—'} · ${fan.home_state || '—'}`;
             },
             afterBody: items => {
