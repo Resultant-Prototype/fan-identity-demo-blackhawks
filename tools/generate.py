@@ -13,12 +13,15 @@ from lib.svg_builder import (build_zone_polygon, build_gate_circle,
 
 def resolve_path_entry(entry, anchors: dict):
     """Resolve one path entry to [x, y].
-    entry is either a string anchor name or {"anchor": "...", "offset_pct": N}.
+    entry is a string anchor name, {"anchor": "...", "offset_pct": N}, or {"x": N, "y": N}.
     """
     if isinstance(entry, str):
         if entry not in anchors:
             raise ValueError(f"unknown anchor '{entry}' — available: {sorted(anchors)}")
         return list(anchors[entry])
+    # absolute coordinate passthrough
+    if "x" in entry and "y" in entry:
+        return [entry["x"], entry["y"]]
     # offset_pct object
     name = entry["anchor"]
     pct  = entry["offset_pct"]
