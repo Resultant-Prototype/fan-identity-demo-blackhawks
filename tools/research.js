@@ -12,7 +12,7 @@ const REQUIRED_IDENT  = ['primary_hex','secondary_hex','ticketing_vendor','scan_
 const REQUIRED_VENUE  = ['name','capacity'];
 const REQUIRED_SVG    = ['viewbox','sport_geometry','anchors','zones','gates','gate_by_zone_weights'];
 
-function validateVenueJson(obj) {
+function validateVenueJson(obj, expectSectionIds = false) {
   const errors = [];
   for (const k of REQUIRED_TOP)   if (!(k in obj))           errors.push(`missing top-level: ${k}`);
   if (obj.team)    for (const k of REQUIRED_TEAM)   if (!(k in obj.team))    errors.push(`team.${k} missing`);
@@ -21,6 +21,13 @@ function validateVenueJson(obj) {
   if (obj.svg)     for (const k of REQUIRED_SVG)    if (!(k in obj.svg))     errors.push(`svg.${k} missing`);
   if (obj.svg?.zones?.length === 0)  errors.push('svg.zones must not be empty');
   if (obj.svg?.gates?.length === 0)  errors.push('svg.gates must not be empty');
+  if (expectSectionIds && obj.svg?.zones) {
+    for (const z of obj.svg.zones) {
+      if (!Array.isArray(z.section_ids) || z.section_ids.length === 0) {
+        errors.push(`zone "${z.name}" is missing section_ids (required when --sections-from is provided)`);
+      }
+    }
+  }
   return errors;
 }
 
@@ -30,10 +37,14 @@ function slugify(name) {
 
 // ── Research prompt ────────────────────────────────────────────
 
-function buildPrompt(teamName, venueName) {
+function buildPrompt(teamName, venueName, sectionIds = null) {
+  const sectionBlock = sectionIds
+    ? `\nScraped section IDs from the venue's seating chart (${sectionIds.length} total):\n${JSON.stringify(sectionIds)}\n\nFor each zone in "zones", add a "section_ids" array containing patterns that match the sections in that zone:\n  - Numeric range: "101-142" matches all numeric IDs from 101 to 142\n  - Wildcard prefix: "Suite_*" matches any ID starting with "Suite_"\n  - Exact: "standing_room_only" matches that exact ID\nEvery section ID must be covered by exactly one zone.\n`
+    : '';
+
   return `You are a sports venue researcher. Output ONLY valid JSON with no prose, no markdown fences.
 
-Research "${teamName}" playing at "${venueName}" and return a venue intelligence object matching this exact schema:
+Research "${teamName}" playing at "${venueName}" and return a venue intelligence object matching this exact schema:${sectionBlock}
 
 {
   "schema_version": "1.0",
@@ -72,6 +83,7 @@ Research "${teamName}" playing at "${venueName}" and return a venue intelligence
         "layer": 1,
         "fill": "#RRGGBB",
         "suite_level": false,
+        "section_ids": ["pattern-or-range"],
         "path": ["anchor_name_or_offset_object"]
       }
     ],
@@ -107,14 +119,15 @@ Guidelines:
 
 async function main() {
   const args = process.argv.slice(2);
-  const flags = { overwrite: false, dryRun: false, quiet: false };
+  const flags = { overwrite: false, dryRun: false, quiet: false, sectionsFrom: null };
   const positional = [];
 
-  for (const a of args) {
-    if (a === '--overwrite') flags.overwrite = true;
-    else if (a === '--dry-run') flags.dryRun = true;
-    else if (a === '--quiet') flags.quiet = true;
-    else positional.push(a);
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--overwrite') flags.overwrite = true;
+    else if (args[i] === '--sections-from') { flags.sectionsFrom = args[++i]; }
+    else if (args[i] === '--dry-run') flags.dryRun = true;
+    else if (args[i] === '--quiet') flags.quiet = true;
+    else positional.push(args[i]);
   }
 
   if (positional.length < 2) {
@@ -140,6 +153,32 @@ async function main() {
 
   if (!flags.quiet) console.log(`Researching "${teamName}" at "${venueName}"...`);
 
+  // If --sections-from provided, run from_seating_chart.py --list-sections
+  let sectionIds = null;
+  if (flags.sectionsFrom) {
+    const { spawnSync } = require('child_process');
+    if (!fs.existsSync(flags.sectionsFrom)) {
+      console.error(`ERROR: --sections-from path not found: ${flags.sectionsFrom}`);
+      process.exit(2);
+    }
+    const listResult = spawnSync(
+      'python3',
+      [path.join(__dirname, 'from_seating_chart.py'), flags.sectionsFrom, '--list-sections'],
+      { encoding: 'utf8' }
+    );
+    if (listResult.status !== 0) {
+      console.error(`ERROR running --list-sections: ${listResult.stderr}`);
+      process.exit(2);
+    }
+    // Parse the stdout: lines like "Numeric (145): [...]" and "Named (23): [...]"
+    const numericMatch = listResult.stdout.match(/Numeric \(\d+\):\s+(\[.*?\])/s);
+    const namedMatch   = listResult.stdout.match(/Named\s+\(\d+\):\s+(\[.*?\])/s);
+    const numeric = numericMatch ? JSON.parse(numericMatch[1]) : [];
+    const named   = namedMatch   ? JSON.parse(namedMatch[1])   : [];
+    sectionIds = [...numeric, ...named];
+    if (!flags.quiet) console.log(`Found ${sectionIds.length} section IDs from scraped SVG.`);
+  }
+
   const client = new Anthropic({ apiKey });
 
   let venueObj;
@@ -148,7 +187,7 @@ async function main() {
       model: 'claude-sonnet-4-6',
       max_tokens: 4096,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages: [{ role: 'user', content: buildPrompt(teamName, venueName) }],
+      messages: [{ role: 'user', content: buildPrompt(teamName, venueName, sectionIds) }],
     });
 
     // Extract text from response (tool use may precede final text)
@@ -164,7 +203,7 @@ async function main() {
   }
 
   // Validate
-  const errors = validateVenueJson(venueObj);
+  const errors = validateVenueJson(venueObj, sectionIds !== null);
   if (errors.length > 0) {
     console.error('ERROR: Response failed schema validation:');
     errors.forEach(e => console.error(`  - ${e}`));
@@ -184,6 +223,10 @@ async function main() {
     console.log(`  Team:     ${venueObj.team.name} (${venueObj.sport.toUpperCase()})`);
     console.log(`  Venue:    ${venueObj.venue.name} (cap: ${venueObj.venue.capacity.toLocaleString()})`);
     console.log(`  Zones:    ${venueObj.svg.zones.map(z => z.name).join(', ')}`);
+    if (sectionIds) {
+      const covered = venueObj.svg.zones.reduce((acc, z) => acc + (z.section_ids?.length || 0), 0);
+      console.log(`  section_ids patterns: ${covered} (covering ${sectionIds.length} scraped sections)`);
+    }
     console.log(`  Gates:    ${venueObj.svg.gates.map(g => g.name).join(', ')}`);
     console.log(`  Colors:   primary=${venueObj.identity.primary_hex}  secondary=${venueObj.identity.secondary_hex}`);
     console.log('');
