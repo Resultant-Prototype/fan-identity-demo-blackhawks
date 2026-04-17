@@ -203,10 +203,11 @@ function renderTab(tabId) {
 // ── Initial startup checks ──
 (function smokeTest() {
   const errors = [];
-  if (GAMES.length !== 81)                                    errors.push(`GAMES: expected 81, got ${GAMES.length}`);
-  if (GAME_TICKETS.length !== 81)                             errors.push(`GAME_TICKETS: expected 81`);
-  if (GAME_SCANS.length !== 81)                               errors.push(`GAME_SCANS: expected 81`);
-  if (GAME_FNB.length !== 81)                                 errors.push(`GAME_FNB: expected 81`);
+  const hg = SCHEDULE_PRESET.homeGames;
+  if (GAMES.length !== hg)                                    errors.push(`GAMES: expected ${hg}, got ${GAMES.length}`);
+  if (GAME_TICKETS.length !== hg)                             errors.push(`GAME_TICKETS: expected ${hg}`);
+  if (GAME_SCANS.length !== hg)                               errors.push(`GAME_SCANS: expected ${hg}`);
+  if (GAME_FNB.length !== hg)                                 errors.push(`GAME_FNB: expected ${hg}`);
   if (FANS.length !== 3000)                                    errors.push(`FANS: expected 3000, got ${FANS.length}`);
   if (FANS.filter(f => f.global_fan_id).length !== 2172)      errors.push(`Linked fans: expected 2172`);
   if (FANS.filter(f => f.linked_sources === 'SCAN|FNB').length !== 252) errors.push(`Dark fans: expected 252`);
