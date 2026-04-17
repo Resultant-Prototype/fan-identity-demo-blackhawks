@@ -185,6 +185,26 @@ async function main() {
     localDir,
     flags.quiet
   );
+
+  // Step 9: Build
+  if (!flags.quiet) console.log('Building index.html...');
+  run('node build.js', { cwd: localDir });
+
+  // Step 10: Commit all generated artifacts + push
+  if (!flags.quiet) console.log('Committing and pushing...');
+  run(`git add -A && git commit -m "init: ${slug} demo"`, { cwd: localDir });
+  run('git push', { cwd: localDir });
+
+  // Completion output — always printed, even with --quiet
+  const indexPath = path.join(localDir, 'index.html');
+  console.log(`\n✓ Demo ready → ${indexPath}`);
+  console.log(`  open ${indexPath}`);
+  console.log('\n⚠  One manual step remaining:');
+  console.log('   Add the team logo file to the repo root, then update logoFile in src/client-config.js:');
+  console.log("     logoFile: 'your-logo-filename.png'");
+  console.log('   Then rebuild: node build.js');
+  // Structured JSON status line (always last — parseable by agents)
+  console.log(JSON.stringify({ status: 'ok', slug, repo: `brianvinson-serve/fan-demo-${slug}`, index: indexPath }));
 }
 
 main().catch(err => { console.error(err.message); process.exit(2); });
