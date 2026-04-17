@@ -97,9 +97,12 @@ def main():
 
     # ── Parse source SVG ──────────────────────────────────────
     src = src_path.read_text()
-    # Strip xlink namespace for ElementTree compatibility
+    # Strip namespaces for ElementTree compatibility.
+    # Remove xlink:href entirely (some SVGs have both href and xlink:href;
+    # renaming xlink:href→href would create duplicate attributes).
+    src = src.replace(' xmlns="http://www.w3.org/2000/svg"', '')
     src = src.replace(' xmlns:xlink="http://www.w3.org/1999/xlink"', '')
-    src = src.replace(' xlink:href=', ' href=')
+    src = re.sub(r'\s+xlink:href="[^"]*"', '', src)
 
     root = ET.fromstring(src)
 
