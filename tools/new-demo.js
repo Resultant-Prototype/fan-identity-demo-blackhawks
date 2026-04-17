@@ -24,7 +24,95 @@ function pause() {
 }
 
 async function main() {
-  // stub — implementation added in later tasks
+  const args = process.argv.slice(2);
+  const flags = { resume: null, dryRun: false, quiet: false, svg: null };
+  const positional = [];
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--resume')   { flags.resume = args[++i]; }
+    else if (args[i] === '--svg') { flags.svg    = args[++i]; }
+    else if (args[i] === '--dry-run') flags.dryRun = true;
+    else if (args[i] === '--quiet')   flags.quiet  = true;
+    else positional.push(args[i]);
+  }
+
+  const isResume = flags.resume !== null;
+  const slug     = isResume ? flags.resume : (positional[0] ? slugify(positional[0]) : null);
+  const teamName  = isResume ? null : positional[0];
+  const venueName = isResume ? null : positional[1];
+
+  if (!slug || (!isResume && (!teamName || !venueName))) {
+    console.error('Usage: node tools/new-demo.js "Team Name" "Venue Name" [--svg <scraped.svg>] [--dry-run] [--quiet]');
+    console.error('       node tools/new-demo.js --resume <slug>');
+    process.exit(1);
+  }
+
+  const repoName = `fan-demo-${slug}`;
+  const localDir = path.join(process.env.HOME, 'fan-demos', slug);
+  const TEMPLATE = 'https://github.com/brianvinson-serve/fan-identity-demo-template.git';
+  const SVGS_DIR = path.join(__dirname, '..', 'source-svgs');
+  const { runPreflight } = require('./lib/preflight');
+
+  // Auto-detect scraped SVG from source-svgs/ if --svg not provided
+  if (!flags.svg && !isResume) {
+    const slugLast = slug.split('-').pop();   // "kansas-city-chiefs" → "chiefs"
+    outer: for (const sport of ['mlb', 'nfl', 'nba', 'nhl']) {
+      for (const candidate of [slug, slugLast]) {
+        const p = path.join(SVGS_DIR, sport, `${candidate}.svg`);
+        if (fs.existsSync(p)) {
+          flags.svg = p;
+          if (!flags.quiet) console.log(`Auto-detected SVG: source-svgs/${sport}/${candidate}.svg`);
+          break outer;
+        }
+      }
+    }
+    if (!flags.svg && !flags.quiet) console.log('No scraped SVG found — will use generate.py (approximate geometry).');
+  }
+
+  // Step 0: Preflight
+  if (!flags.quiet) console.log('Running preflight checks...');
+  await runPreflight({ repoName, localDir, dryRun: flags.dryRun, isResume });
+  if (!flags.quiet) console.log('✓ Preflight passed\n');
+
+  if (flags.dryRun) {
+    const { buildSynthPrompt, SPORT_HOME_GAMES } = require('./lib/synth');
+    console.log('DRY RUN — would create:');
+    console.log(`  Local:  ${localDir}`);
+    console.log(`  GitHub: github.com/brianvinson-serve/${repoName} (private)`);
+    console.log(`  Slug:   ${slug}`);
+    if (teamName) console.log(`  Team:   ${teamName} at ${venueName}`);
+    if (flags.svg) console.log(`  SVG:    ${flags.svg} (scraped — exact geometry)`);
+    else           console.log(`  SVG:    generate.py fallback (approximate geometry)`);
+    console.log('\n── Synthetic data prompt (Step 8) would be sent to claude-sonnet-4-6:');
+    // Build a representative prompt with placeholder venue for schema preview
+    const placeholderVenue = {
+      sport: 'mlb',
+      team: { name: teamName || slug, slug },
+    };
+    console.log(buildSynthPrompt(placeholderVenue, new Date().toISOString().slice(0, 10)));
+    process.exit(0);
+  }
+
+  if (!isResume) {
+    // Step 2: Clone template
+    if (!flags.quiet) console.log(`Cloning template → ${localDir}`);
+    fs.mkdirSync(path.join(process.env.HOME, 'fan-demos'), { recursive: true });
+    run(`git clone "${TEMPLATE}" "${localDir}"`);
+
+    // Step 3: Create GitHub repo and point origin at it
+    if (!flags.quiet) console.log(`Creating GitHub repo: brianvinson-serve/${repoName}`);
+    run(`gh repo create brianvinson-serve/${repoName} --private`);
+    run('git remote remove origin', { cwd: localDir });
+    run(`git remote add origin https://github.com/brianvinson-serve/${repoName}.git`, { cwd: localDir });
+    run('git push -u origin main', { cwd: localDir });
+
+    // Step 4: npm install
+    if (!flags.quiet) console.log('Installing npm dependencies...');
+    run('npm install', { cwd: localDir });
+  }
+
+  // Steps 5-10 added in later tasks
+  console.log(`\n[stub] repo ready at ${localDir}`);
 }
 
 main().catch(err => { console.error(err.message); process.exit(2); });
