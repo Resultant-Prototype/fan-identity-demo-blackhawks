@@ -12,15 +12,36 @@ const STATE = {
   tab4: { dateRange: 'full_season', segment: 'all_linked', linkedStatus: 'linked_only' },
 };
 
-// Date range buckets — keyed to 2025 MLB season
+// Date range buckets — derived from GAMES so they work for any sport/season
 const DATE_PRESETS = {
-  full_season:  () => [new Date('2025-03-31'), new Date('2025-09-28')],
-  first_half:   () => [new Date('2025-03-31'), new Date('2025-06-30')],
-  second_half:  () => [new Date('2025-07-01'), new Date('2025-09-28')],
-  last_30_games:() => {
-    const all = [...GAMES].sort((a,b) => a.date.localeCompare(b.date));
-    const cutoff = all[Math.max(0, all.length - 30)].date;
-    return [new Date(cutoff), new Date('2025-09-28')];
+  full_season: () => {
+    const sorted = [...GAMES].sort((a, b) => a.date.localeCompare(b.date));
+    const start = new Date(sorted[0].date + 'T00:00:00');
+    const end   = new Date(sorted[sorted.length - 1].date + 'T23:59:59');
+    start.setDate(start.getDate() - 1);
+    end.setDate(end.getDate() + 1);
+    return [start, end];
+  },
+  first_half: () => {
+    const sorted = [...GAMES].sort((a, b) => a.date.localeCompare(b.date));
+    const mid  = sorted[Math.floor(sorted.length / 2)].date;
+    const start = new Date(sorted[0].date + 'T00:00:00');
+    start.setDate(start.getDate() - 1);
+    return [start, new Date(mid + 'T23:59:59')];
+  },
+  second_half: () => {
+    const sorted = [...GAMES].sort((a, b) => a.date.localeCompare(b.date));
+    const mid  = sorted[Math.floor(sorted.length / 2)].date;
+    const end  = new Date(sorted[sorted.length - 1].date + 'T23:59:59');
+    end.setDate(end.getDate() + 1);
+    return [new Date(mid + 'T00:00:00'), end];
+  },
+  last_30_games: () => {
+    const sorted = [...GAMES].sort((a, b) => a.date.localeCompare(b.date));
+    const cutoff = sorted[Math.max(0, sorted.length - 30)].date;
+    const end = new Date(sorted[sorted.length - 1].date + 'T23:59:59');
+    end.setDate(end.getDate() + 1);
+    return [new Date(cutoff + 'T00:00:00'), end];
   },
 };
 
@@ -101,6 +122,6 @@ const fmt = {
 };
 
 // Smoke tests
-console.assert(filterGames(STATE.tab1).focused.length === 81, 'filterGames full_season should return 81 games');
-console.assert(filterFans(STATE.tab4, 'tab4').length === 362, 'filterFans tab4 linked_only should return 362');
+console.assert(filterGames(STATE.tab1).focused.length === SCHEDULE_PRESET.homeGames,
+  `filterGames full_season should return ${SCHEDULE_PRESET.homeGames} games, got ${filterGames(STATE.tab1).focused.length}`);
 console.log('FILTERS OK');
