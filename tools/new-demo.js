@@ -133,8 +133,42 @@ async function main() {
     await pause();
   }
 
-  // Steps 6-10 added in later tasks
-  console.log(`\n[stub] resume from: ${localDir}`);
+  // Step 6: Generate SVG (exact geometry from scraped SVG, or approximate fallback)
+  if (!flags.quiet) console.log('Generating stadium SVG...');
+  const venueJsonPath = path.join(localDir, `${slug}-venue.json`);
+  const venueData     = JSON.parse(fs.readFileSync(venueJsonPath, 'utf8'));
+  const shortSlug     = venueData.team.short_name.toLowerCase().replace(/\s+/g, '-');
+  const svgOutPath    = path.join(localDir, `${shortSlug}-stadium.svg`);
+
+  if (flags.svg) {
+    // Copy the scraped SVG into the repo so it's self-contained
+    const scrapedCopy = path.join(localDir, `${slug}-scraped.svg`);
+    fs.copyFileSync(flags.svg, scrapedCopy);
+    // Convert scraped SVG → demo-ready SVG using venue config for zone mapping
+    run(
+      `python3 tools/from_seating_chart.py "${scrapedCopy}" "${shortSlug}" --config "${venueJsonPath}"`,
+      { cwd: localDir }
+    );
+    // from_seating_chart.py writes ${shortSlug}-stadium.svg in cwd (localDir) — already correct path
+  } else {
+    // Fallback: approximate geometry from anchors in venue JSON
+    run(`python3 tools/generate.py ${slug}-venue.json`, { cwd: localDir });
+  }
+
+  if (!fs.existsSync(svgOutPath)) {
+    console.error(`✗ Expected SVG not found: ${svgOutPath}`);
+    process.exit(2);
+  }
+  if (!flags.quiet) console.log(`✓ SVG ready: ${svgOutPath}`);
+
+  // Step 7: scaffold_config.py → copy to src/client-config.js
+  if (!flags.quiet) console.log('Scaffolding client config...');
+  run(`python3 tools/scaffold_config.py ${slug}-venue.json`, { cwd: localDir });
+  fs.copyFileSync(
+    path.join(localDir, `${slug}-config-stub.js`),
+    path.join(localDir, 'src', 'client-config.js')
+  );
+  if (!flags.quiet) console.log('✓ Config stub copied to src/client-config.js');
 }
 
 main().catch(err => { console.error(err.message); process.exit(2); });
