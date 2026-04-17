@@ -29,7 +29,7 @@ async function main() {
   const positional = [];
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--resume')   { flags.resume = args[++i]; }
+    if (args[i] === '--resume')   { flags.resume = slugify(args[++i]); }
     else if (args[i] === '--svg') { flags.svg    = args[++i]; }
     else if (args[i] === '--dry-run') flags.dryRun = true;
     else if (args[i] === '--quiet')   flags.quiet  = true;
