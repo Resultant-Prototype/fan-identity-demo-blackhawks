@@ -169,6 +169,23 @@ async function main() {
     path.join(localDir, 'src', 'client-config.js')
   );
   if (!flags.quiet) console.log('✓ Config stub copied to src/client-config.js');
+
+  // Step 8: Synthetic data
+  if (!flags.quiet) console.log('Generating synthetic season data...');
+  const { generateSynthData } = require('./lib/synth');
+  const venueJsonPathForSynth = path.join(localDir, `${slug}-venue.json`);
+  if (!fs.existsSync(venueJsonPathForSynth)) {
+    console.error(`✗ Missing venue JSON: ${venueJsonPathForSynth}`);
+    console.error(`  Run without --resume to generate it first.`);
+    process.exit(2);
+  }
+  const venueDataForSynth = JSON.parse(fs.readFileSync(venueJsonPathForSynth, 'utf8'));
+  await generateSynthData(
+    venueDataForSynth,
+    path.join(localDir, 'src', 'client-config.js'),
+    localDir,
+    flags.quiet
+  );
 }
 
 main().catch(err => { console.error(err.message); process.exit(2); });

@@ -182,3 +182,52 @@ test('generateSynthData: throws when team.name is missing', async () => {
     /team\.name/
   );
 });
+
+// ── synth: patchClientConfig ─────────────────────────────────
+const tmpOs   = require('os');
+const tmpFs   = require('fs');
+const tmpPath = require('path');
+
+test('patchClientConfig: replaces all four stub fields', () => {
+  const dir = tmpFs.mkdtempSync(tmpPath.join(tmpOs.tmpdir(), 'synth-test-'));
+  const configPath = tmpPath.join(dir, 'client-config.js');
+
+  tmpFs.writeFileSync(configPath, [
+    'const UPCOMING_PACING = [];',
+    'const SERIES_SCHEDULE = [];',
+    "const HOME_STATES = ['STUB_STATE'];",
+    'const STATE_WEIGHTS = [100];',
+  ].join('\n'));
+
+  const data = makeValidData('mlb');
+  patchClientConfig(configPath, data);
+
+  const result = tmpFs.readFileSync(configPath, 'utf8');
+  assert.ok(!result.includes('STUB_STATE'),          'HOME_STATES stub not replaced');
+  assert.ok(!result.includes('STATE_WEIGHTS = [100]'), 'STATE_WEIGHTS stub not replaced');
+  assert.ok(result.includes('"NY"'),                 'HOME_STATES value not written');
+  assert.ok(result.includes('Test Opponent'),        'SERIES_SCHEDULE not written');
+  assert.ok(result.includes('daysUntil'),            'UPCOMING_PACING not written');
+
+  tmpFs.rmSync(dir, { recursive: true });
+});
+
+test('patchClientConfig: does not modify other config fields', () => {
+  const dir = tmpFs.mkdtempSync(tmpPath.join(tmpOs.tmpdir(), 'synth-test2-'));
+  const configPath = tmpPath.join(dir, 'client-config.js');
+
+  tmpFs.writeFileSync(configPath, [
+    "const TEAM = { sport: 'mlb', orgName: 'Test Org' };",
+    'const UPCOMING_PACING = [];',
+    'const SERIES_SCHEDULE = [];',
+    "const HOME_STATES = ['STUB_STATE'];",
+    'const STATE_WEIGHTS = [100];',
+  ].join('\n'));
+
+  patchClientConfig(configPath, makeValidData('mlb'));
+
+  const result = tmpFs.readFileSync(configPath, 'utf8');
+  assert.ok(result.includes("orgName: 'Test Org'"), 'TEAM field was modified');
+
+  tmpFs.rmSync(dir, { recursive: true });
+});
