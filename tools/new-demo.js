@@ -109,10 +109,32 @@ async function main() {
     // Step 4: npm install
     if (!flags.quiet) console.log('Installing npm dependencies...');
     run('npm install', { cwd: localDir });
+
+    // Step 5: Research (with optional scraped SVG section mapping)
+    if (!flags.quiet) console.log(`\nResearching "${teamName}" at "${venueName}"...`);
+    const sectionsFlag = flags.svg ? ` --sections-from "${flags.svg}"` : '';
+    run(`node tools/research.js "${teamName}" "${venueName}"${sectionsFlag}`, { cwd: localDir });
+
+    // Review gate
+    const venueJsonPath = path.join(localDir, `${slug}-venue.json`);
+    console.log(`\n✓ Venue research complete → ${venueJsonPath}\n`);
+    console.log('Things to verify against the team\'s current website:');
+    console.log('  • Zone names match the actual seating map sections');
+    if (flags.svg) {
+      console.log('  • section_ids patterns cover all scraped sections (check the output above)');
+    }
+    console.log('  • Gate sponsor names are current (naming rights change)');
+    console.log('  • primary_hex / secondary_hex match official brand colors');
+    console.log('  • ticketing_vendor, scan_vendor, fnb_vendor are accurate');
+    console.log('  • venue.capacity is correct for the current season');
+    console.log('\nReference example (already in repo): tools/tests/fixtures/texas-rangers-venue.json\n');
+    console.log('Press Enter to continue, or Ctrl+C to abort and edit the JSON.');
+    console.log(`After editing, run: node tools/new-demo.js --resume ${slug}${flags.svg ? ` --svg "${flags.svg}"` : ''}\n`);
+    await pause();
   }
 
-  // Steps 5-10 added in later tasks
-  console.log(`\n[stub] repo ready at ${localDir}`);
+  // Steps 6-10 added in later tasks
+  console.log(`\n[stub] resume from: ${localDir}`);
 }
 
 main().catch(err => { console.error(err.message); process.exit(2); });
