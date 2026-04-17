@@ -131,7 +131,7 @@ async function main() {
   }
 
   if (positional.length < 2) {
-    console.error('Usage: node tools/research.js "Team Name" "Venue Name" [--overwrite] [--dry-run] [--quiet]');
+    console.error('Usage: node tools/research.js "Team Name" "Venue Name" [--sections-from <svg>] [--overwrite] [--dry-run] [--quiet]');
     process.exit(1);
   }
 
