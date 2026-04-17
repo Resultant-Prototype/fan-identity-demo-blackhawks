@@ -50,7 +50,8 @@ async function main() {
   }
 
   const repoName = `fan-demo-${slug}`;
-  const localDir = path.join(process.env.HOME, 'fan-demos', slug);
+  const demosRoot = process.env.FAN_DEMOS_DIR || path.join(process.env.HOME, 'AnthMCP', '07_Experiments', 'fan-demos');
+  const localDir = path.join(demosRoot, slug);
   const TEMPLATE = 'https://github.com/brianvinson-serve/fan-identity-demo-template.git';
   const SVGS_DIR = path.join(__dirname, '..', 'source-svgs');
   const { runPreflight } = require('./lib/preflight');
@@ -97,7 +98,7 @@ async function main() {
   if (!isResume) {
     // Step 2: Clone template
     if (!flags.quiet) console.log(`Cloning template → ${localDir}`);
-    fs.mkdirSync(path.join(process.env.HOME, 'fan-demos'), { recursive: true });
+    fs.mkdirSync(demosRoot, { recursive: true });
     run(`git clone "${TEMPLATE}" "${localDir}"`);
 
     // Step 3: Create GitHub repo and point origin at it
