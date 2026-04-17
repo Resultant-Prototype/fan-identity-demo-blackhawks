@@ -23,7 +23,7 @@ or use the scaffold output from scaffold_config.py.
 """
 
 import xml.etree.ElementTree as ET
-import math, sys, re
+import json, math, sys, re
 from pathlib import Path
 
 
@@ -82,10 +82,23 @@ def classify_section(sid: str) -> str:
 
 def main():
     list_sections = '--list-sections' in sys.argv
-    remaining = [a for a in sys.argv[1:] if a != '--list-sections']
+    args = [a for a in sys.argv[1:] if a != '--list-sections']
+
+    # Parse --config flag
+    config_path = None
+    filtered = []
+    i = 0
+    while i < len(args):
+        if args[i] == '--config' and i + 1 < len(args):
+            config_path = args[i + 1]
+            i += 2
+        else:
+            filtered.append(args[i])
+            i += 1
+    remaining = filtered
 
     if len(remaining) < 1:
-        print("Usage: python3 tools/from_seating_chart.py <source.svg> [slug] [--list-sections]")
+        print("Usage: python3 tools/from_seating_chart.py <source.svg> [slug] [--config venue.json] [--list-sections]")
         sys.exit(1)
 
     src_path = Path(remaining[0])
@@ -94,6 +107,41 @@ def main():
         sys.exit(1)
 
     slug = remaining[1] if len(remaining) > 1 else src_path.stem
+
+    # ── Load venue config (when --config provided) ─────────────
+    venue = None
+    section_zone_map = {}   # sid_str → zone_name
+    zone_fills = {}         # zone_name → fill color
+    config_gates = []       # [(name, cx, cy, fill, side), ...]
+
+    if config_path:
+        with open(config_path) as f:
+            venue = json.load(f)
+
+        svg_cfg = venue.get('svg', {})
+
+        # Build section_id → zone_name from section_ids patterns (e.g. "101-136")
+        for zone in svg_cfg.get('zones', []):
+            zname = zone['name']
+            zone_fills[zname] = zone.get('fill', '#7B9EC1')
+            for pat in zone.get('section_ids', []):
+                if re.match(r'^\d+-\d+$', pat):
+                    lo, hi = pat.split('-')
+                    for n in range(int(lo), int(hi) + 1):
+                        section_zone_map[str(n)] = zname
+                else:
+                    section_zone_map[pat] = zname
+
+        # Build gate list from config (positions already in 900×800 space)
+        SVG_CX, SVG_CY = 450, 400
+        for g in svg_cfg.get('gates', []):
+            gx, gy = float(g['cx']), float(g['cy'])
+            dx, dy = gx - SVG_CX, gy - SVG_CY
+            if abs(dx) > abs(dy):
+                side = 'right' if dx > 0 else 'left'
+            else:
+                side = 'bottom' if dy > 0 else 'top'
+            config_gates.append((g['name'], gx, gy, g.get('fill', '#888888'), side))
 
     # ── Parse source SVG ──────────────────────────────────────
     src = src_path.read_text()
@@ -120,7 +168,7 @@ def main():
         pts = parse_points(pts_str)
         if not pts:
             continue
-        zone = classify_section(sid)
+        zone = section_zone_map.get(sid) or classify_section(sid)
         sections.append((zone, sid, pts))
         x_all.extend(p[0] for p in pts)
         y_all.extend(p[1] for p in pts)
@@ -138,7 +186,6 @@ def main():
             except ValueError:
                 named_ids.append(sid)
         numeric_ids.sort()
-        import json
         print(f"Numeric ({len(numeric_ids)}): {json.dumps(numeric_ids)}")
         print(f"Named   ({len(named_ids)}): {json.dumps(named_ids)}")
         sys.exit(0)
@@ -173,13 +220,26 @@ def main():
     print(f"Native bounds: x=[{x_min:.0f},{x_max:.0f}] y=[{y_min:.0f},{y_max:.0f}]", file=sys.stderr)
 
     # ── Sort zones back→front ─────────────────────────────────
-    sections.sort(key=lambda s: ZONE_LAYER[s[0]])
+    # Use venue config layer order when available, else fall back to ZONE_LAYER
+    if venue:
+        zone_layer_cfg = {z['name']: z.get('layer', 99)
+                          for z in venue.get('svg', {}).get('zones', [])}
+        sections.sort(key=lambda s: zone_layer_cfg.get(s[0], 99))
+    else:
+        sections.sort(key=lambda s: ZONE_LAYER.get(s[0], 99))
 
     # ── Field overlay ─────────────────────────────────────────
     # The field is the gap between the innermost sections.
-    # Estimate from the inner boundary of 100-level sections.
-    inner_sections = [(sid, pts) for zone, sid, pts in sections
-                      if zone == '100 Level Lower Bowl' and sid != 'west_end_suites']
+    # "Layer 3" sections in config == field-level; fall back to "100 Level Lower Bowl".
+    if venue:
+        max_layer = max((z.get('layer', 1) for z in venue.get('svg', {}).get('zones', [])), default=1)
+        inner_zone_names = {z['name'] for z in venue.get('svg', {}).get('zones', [])
+                            if z.get('layer', 1) == max_layer}
+        inner_sections = [(sid, pts) for zone, sid, pts in sections
+                          if zone in inner_zone_names]
+    else:
+        inner_sections = [(sid, pts) for zone, sid, pts in sections
+                          if zone == '100 Level Lower Bowl' and sid != 'west_end_suites']
 
     # Field boundary: find the bounding box of the innermost edge of lower bowl.
     # Simple heuristic: use the 20th/80th percentile of x/y across 100-level coords.
@@ -248,7 +308,7 @@ def main():
     ]
 
     for zone, sid, pts in sections:
-        fill = ZONE_COLORS[zone]
+        fill = zone_fills.get(zone) or ZONE_COLORS.get(zone, '#7B9EC1')
         tpts = format_points(tx_pts(pts))
         lines.append(
             f'  <polygon class="section-zone" data-zone="{zone}" data-sid="{sid}"\n'
@@ -285,13 +345,17 @@ def main():
             f'        x1="{lx}" y1="{fy1:.1f}" x2="{lx}" y2="{fy2:.1f}"/>'
         )
 
-    lines += ['', '  <!-- GATE MARKERS (generic — edit venue JSON to rename) -->',
+    gate_src = config_gates if config_gates else [
+        (name, *gate_pos(angle), fill, side)
+        for name, angle, fill, side in gates
+    ]
+    comment = '<!-- GATE MARKERS -->' if config_gates else '<!-- GATE MARKERS (generic — pass --config to use real names) -->'
+    lines += ['', f'  {comment}',
               '  <g class="gate-markers"',
               '     font-family="\'Lexend Deca\',system-ui,sans-serif"',
               '     font-size="9" font-weight="700">']
 
-    for name, angle, fill, side in gates:
-        gx, gy = gate_pos(angle)
+    for name, gx, gy, fill, side in gate_src:
         dx, dy, anchor = LABEL_OFF[side]
         lines.append(
             f'    <circle class="gate-marker" data-gate="{name}"\n'
@@ -322,7 +386,8 @@ def main():
     out.write_text('\n'.join(lines))
     print(f"✓ Written: {out}")
     print(f"  Zones: {len(set(z for z,_,_ in sections))}  Sections: {len(sections)}")
-    print("  Gate labels default to cardinal directions — edit the JSON or SVG to add sponsor names.")
+    if not config_gates:
+        print("  Gate labels default to cardinal directions — pass --config <venue.json> to use real names.")
 
 
 if __name__ == '__main__':

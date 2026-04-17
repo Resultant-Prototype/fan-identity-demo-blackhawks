@@ -509,50 +509,41 @@ function renderTab1() {
         : '';
     });
 
-    // Nudge gate name labels to track bubble radius
-    const GATE_LABEL_ANCHORS = {
-      'Northwest Entry':          { side: 'above', lines: 2 },
-      'TXU Energy North Entry':   { side: 'above', lines: 2 },
-      'Comerica Northeast Entry': { side: 'right', lines: 2 },
-      'VIP Entry North':          { side: 'left',  lines: 2 },
-      'VIP Entry South':          { side: 'left',  lines: 2 },
-      'SeatGeek Southeast Entry': { side: 'right', lines: 2 },
-      'Toyota Southwest Entry':   { side: 'below', lines: 1 },
-    };
-    const LABEL_GAP    = 8;   // px between bubble edge and nearest label character
-    const LABEL_LINE_H = 11;  // px between the two label lines
+    // Nudge gate name labels to track bubble radius.
+    // Direction is computed from gate position vs SVG center — works for any team's gate layout.
+    const LABEL_GAP    = 8;
+    const LABEL_LINE_H = 11;
+    const SVG_CX = 450, SVG_CY = 400;
 
     host.querySelectorAll('.gate-marker').forEach(circ => {
-      const gate   = circ.dataset.gate;
-      const anchor = GATE_LABEL_ANCHORS[gate];
-      if (!anchor) return;
-
       const cx = parseFloat(circ.getAttribute('cx'));
       const cy = parseFloat(circ.getAttribute('cy'));
       const r  = parseFloat(circ.getAttribute('r'));
 
-      // Collect this gate's sibling <text> nodes (stop at next <circle> or end)
+      const ddx = cx - SVG_CX, ddy = cy - SVG_CY;
+      const side = Math.abs(ddx) > Math.abs(ddy)
+        ? (ddx > 0 ? 'right' : 'left')
+        : (ddy > 0 ? 'below' : 'above');
+
       const texts = [];
       let sib = circ.nextElementSibling;
-      while (sib && sib.tagName.toLowerCase() === 'text' && texts.length < anchor.lines) {
-        texts.push(sib);
-        sib = sib.nextElementSibling;
+      while (sib && sib.tagName.toLowerCase() === 'text' && texts.length < 2) {
+        texts.push(sib); sib = sib.nextElementSibling;
       }
 
-      if (anchor.side === 'above') {
-        // Two lines stacked above — bottom line closest to bubble
+      if (side === 'above') {
         const y2 = cy - r - LABEL_GAP;
         const y1 = y2 - LABEL_LINE_H;
         if (texts[0]) { texts[0].setAttribute('x', cx); texts[0].setAttribute('y', y1); }
         if (texts[1]) { texts[1].setAttribute('x', cx); texts[1].setAttribute('y', y2); }
-      } else if (anchor.side === 'below') {
+      } else if (side === 'below') {
         const y1 = cy + r + LABEL_GAP + LABEL_LINE_H;
         if (texts[0]) { texts[0].setAttribute('x', cx); texts[0].setAttribute('y', y1); }
-      } else if (anchor.side === 'right') {
+      } else if (side === 'right') {
         const x = cx + r + LABEL_GAP;
         if (texts[0]) { texts[0].setAttribute('x', x); texts[0].setAttribute('y', cy - 4); }
         if (texts[1]) { texts[1].setAttribute('x', x); texts[1].setAttribute('y', cy + LABEL_LINE_H - 4); }
-      } else if (anchor.side === 'left') {
+      } else {
         const x = cx - r - LABEL_GAP;
         if (texts[0]) { texts[0].setAttribute('x', x); texts[0].setAttribute('y', cy - 4); }
         if (texts[1]) { texts[1].setAttribute('x', x); texts[1].setAttribute('y', cy + LABEL_LINE_H - 4); }
