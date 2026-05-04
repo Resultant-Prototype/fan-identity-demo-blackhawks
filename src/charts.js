@@ -112,13 +112,23 @@ function renderTab1() {
   const stmScanRate    = fScans.length
     ? fScans.reduce((s, r) => s + (1 - r.stm_no_show_rate), 0) / fScans.length : 0;
 
+  const bAvgAttend   = bScans.length ? bScans.reduce((s, r) => s + r.tickets_scanned, 0) / bScans.length : 0;
+  const bNoShowRate  = bScans.length ? bScans.reduce((s, r) => s + r.no_show_rate, 0) / bScans.length : 0;
+  const bSTMScan     = bScans.length ? bScans.reduce((s, r) => s + (1 - r.stm_no_show_rate), 0) / bScans.length : 0;
+  const bEarlyArr    = bScans.length ? bScans.reduce((s, r) => s + r.arr_90plus + r.arr_60to90, 0) / bScans.length : 0;
+  const isFocused    = mode === 'focused' && bScans.length > 0;
+  const deltaAttend  = isFocused && bAvgAttend   > 0 ? Math.round((avgAttendance / bAvgAttend  - 1) * 100) : undefined;
+  const deltaNoShow  = isFocused && bNoShowRate  > 0 ? -Math.round((noShowRate - bNoShowRate)  * 1000) / 10 : undefined;
+  const deltaSTM     = isFocused && bSTMScan     > 0 ? Math.round((stmScanRate / bSTMScan     - 1) * 100) : undefined;
+  const deltaEarly   = isFocused && bEarlyArr    > 0 ? Math.round((earlyArrRate / bEarlyArr   - 1) * 100) : undefined;
+
   renderBANs('t1-bans', [
     { label: 'Season Attendance',          value: fmt.num(totalScanned) },
-    { label: 'Avg Attendance / Game',      value: fmt.num(Math.round(avgAttendance)) },
-    { label: 'No-Show Rate',               value: fmt.pct(noShowRate) },
-    { label: 'Early Arrival Rate',         value: fmt.pct(earlyArrRate) },
+    { label: 'Avg Attendance / Game',      value: fmt.num(Math.round(avgAttendance)), delta: deltaAttend, deltaLabel: 'vs avg' },
+    { label: 'No-Show Rate',               value: fmt.pct(noShowRate),                delta: deltaNoShow, deltaLabel: 'vs avg' },
+    { label: 'Early Arrival Rate',         value: fmt.pct(earlyArrRate),              delta: deltaEarly,  deltaLabel: 'vs avg' },
     { label: 'Avg Tickets Per Scan',       value: avgTixPerScan.toFixed(1) },
-    { label: `${TEAM.stmLabel} Scan Rate`, value: fmt.pct(stmScanRate), lead: true },
+    { label: `${TEAM.stmLabel} Scan Rate`, value: fmt.pct(stmScanRate), lead: true,   delta: deltaSTM,    deltaLabel: 'vs avg' },
   ]);
 
   // Full-season timeline for per-game time-series charts
@@ -242,7 +252,7 @@ function renderTab1() {
   destroyChart('t1-arrivalDist');
   const arrBuckets = ['arr_90plus', 'arr_60to90', 'arr_30to60', 'arr_0to30', 'arr_post_pitch'];
   const arrLabels  = ['90+ min early', '60–90 min', '30–60 min', '0–30 min', 'After first pitch'];
-  const arrColors  = [PALETTE.navy, PALETTE.navyMid, PALETTE.navySoft, PALETTE.navyPale, PALETTE.navyGhost];
+  const arrColors  = ['#CF0A2C', '#1A1A1A', '#4B5563', '#9CA3AF', '#D1D5DB'];
   const arrDatasets3 = [];
 
   if (mode === 'all') {
@@ -323,7 +333,7 @@ function renderTab1() {
       datasets: [{
         label: 'No-Show Rate',
         data: [stmNS, singleNS, secNS],
-        backgroundColor: [PALETTE.navy, PALETTE.navySoft, PALETTE.gray],
+        backgroundColor: ['#00897B', '#6B7280', '#CF0A2C'],
         borderRadius: 4,
       }],
     },
@@ -374,6 +384,22 @@ function renderTab1() {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
+        annotation: {
+          annotations: {
+            targetLine: {
+              type: 'line', yMin: 0.95, yMax: 0.95,
+              borderColor: '#6B7280', borderWidth: 1.5, borderDash: [4, 4],
+              label: {
+                content: '95% target',
+                display: true, position: 'end',
+                font: { size: 9, weight: '600', family: "'Lexend Deca'" },
+                color: '#6B7280',
+                backgroundColor: 'rgba(255,255,255,0.88)',
+                padding: { x: 5, y: 2 }, borderRadius: 3,
+              },
+            },
+          },
+        },
         tooltip: {
           callbacks: {
             title: items => {
@@ -383,15 +409,21 @@ function renderTab1() {
             label: ctx => {
               const avg = stmByMonth.reduce((a, b) => a + b, 0) / (stmByMonth.length || 1);
               const diff = ctx.raw - avg;
+              const vsTarget = ctx.raw - 0.95;
               const sign = diff >= 0 ? '+' : '−';
-              return [`${fmt.pct(ctx.raw)} scan rate`, `${sign}${fmt.pct(Math.abs(diff))} vs. season avg`];
+              const tSign = vsTarget >= 0 ? '+' : '−';
+              return [
+                `${fmt.pct(ctx.raw)} scan rate`,
+                `${sign}${fmt.pct(Math.abs(diff))} vs. season avg`,
+                `${tSign}${fmt.pct(Math.abs(vsTarget))} vs. 95% target`,
+              ];
             },
           },
         },
       },
       scales: {
         x: { grid: { display: false } },
-        y: { ticks: { callback: v => fmt.pct(v) }, min: 0.80, max: 1.0 },
+        y: { ticks: { callback: v => fmt.pct(v) }, min: 0.75, max: 1.0 },
       },
     },
   });
@@ -402,12 +434,36 @@ function renderTab1() {
   const group23Avg = fScans.length ? fScans.reduce((s, r) => s + r.group_2to3_pct, 0) / fScans.length : 0;
   const group4Avg  = fScans.length ? fScans.reduce((s, r) => s + r.group_4plus_pct, 0) / fScans.length : 0;
 
-  CHARTS['t1-groupScanDist'] = new Chart(document.getElementById('t1-groupScanDist'), {
+  const _donutCenterPlugin = {
+    id: 'donutCenter',
+    afterDraw(chart) {
+      if (chart.config.type !== 'doughnut') return;
+      const { ctx, chartArea } = chart;
+      const cx = chartArea.left + chartArea.width  / 2;
+      const cy = chartArea.top  + chartArea.height / 2;
+      const data   = chart.data.datasets[0].data;
+      const colors = chart.data.datasets[0].backgroundColor;
+      const labels = chart.data.labels;
+      const total  = data.reduce((s, v) => s + v, 0) || 1;
+      const maxIdx = data.reduce((mi, v, i, a) => v > a[mi] ? i : mi, 0);
+      const pct    = Math.round(data[maxIdx] / total * 100);
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = `700 ${Math.round(chartArea.height * 0.14)}px "Lexend Deca",system-ui,sans-serif`;
+      ctx.fillStyle = colors[maxIdx];
+      ctx.fillText(pct + '%', cx, cy - chartArea.height * 0.06);
+      ctx.font = `500 ${Math.round(chartArea.height * 0.085)}px "Lexend Deca",system-ui,sans-serif`;
+      ctx.fillStyle = '#6B7280';
+      ctx.fillText(labels[maxIdx].split(' ')[0], cx, cy + chartArea.height * 0.09);
+      ctx.restore();
+    },
+  };
+  CHARTS['t1-groupScanDist'] = new Chart(document.getElementById('t1-groupScanDist'), { plugins: [_donutCenterPlugin],
     type: 'doughnut',
     data: {
       labels: ['Solo (1 ticket)', 'Small Group (2–3)', 'Large Group (4+)'],
       datasets: [{ data: [soloAvg, group23Avg, group4Avg],
-                   backgroundColor: [PALETTE.navy, PALETTE.navyMid, PALETTE.navySoft], borderWidth: 0 }],
+                   backgroundColor: ['#CF0A2C', '#1A1A1A', '#9CA3AF'], borderWidth: 0 }],
     },
     options: {
       responsive: true, maintainAspectRatio: false, cutout: '65%',
@@ -462,11 +518,13 @@ function renderTab1() {
     const arr    = gateArrival[gate] || [];
     const maxPct = Math.max(...arr.map(a => a.pct), 0.01);
     const bars   = arr.map(a => {
-      const w = Math.round((a.pct / maxPct) * 72);
+      const pW = Math.round((a.pct / maxPct) * 100);
       return `<div style="display:flex;align-items:center;gap:5px;margin-top:4px">
-        <span style="color:rgba(255,255,255,0.55);font-size:9px;width:54px;text-align:right;flex-shrink:0">${a.label}</span>
-        <div style="background:#c41e3a;height:7px;width:${w}px;border-radius:2px;min-width:2px"></div>
-        <span style="color:rgba(255,255,255,0.75);font-size:9px">${fmt.pct(a.pct)}</span>
+        <span style="color:rgba(255,255,255,0.50);font-size:9px;width:52px;text-align:right;flex-shrink:0">${a.label}</span>
+        <div style="flex:1;background:rgba(255,255,255,0.10);border-radius:2px;height:7px;overflow:hidden">
+          <div style="background:#c41e3a;height:100%;width:${pW}%;min-width:2px;border-radius:2px"></div>
+        </div>
+        <span style="color:rgba(255,255,255,0.75);font-size:9px;width:30px;text-align:right">${fmt.pct(a.pct)}</span>
       </div>`;
     }).join('');
     return `<strong style="font-size:12px">${gate}</strong>
@@ -585,8 +643,9 @@ function renderTab1() {
       const count = gateCounts[gate] || 0;
       gateTip.innerHTML = buildGateTip(gate, count);
       gateTip.style.display = 'block';
-      gateTip.style.left = (evt.clientX + 16) + 'px';
-      gateTip.style.top  = (evt.clientY - 40) + 'px';
+      const _tipW = 230, _tipH = 180;
+      gateTip.style.left = Math.min(evt.clientX + 16, window.innerWidth  - _tipW - 8) + 'px';
+      gateTip.style.top  = Math.max(8, Math.min(evt.clientY - 40, window.innerHeight - _tipH - 8)) + 'px';
     });
     host.addEventListener('mouseleave', () => { gateTip.style.display = 'none'; });
   }
@@ -762,7 +821,7 @@ function renderTab2() {
     data: {
       labels: tierLabels,
       datasets: [{ label: 'Secondary Market Share', data: tierSecShare,
-                   backgroundColor: [PALETTE.navy, PALETTE.navyMid, PALETTE.navySoft], borderRadius: 4 }],
+                   backgroundColor: ['#CF0A2C', '#6B7280', '#D1D5DB'], borderRadius: 4}],
     },
     options: {
       responsive: true, maintainAspectRatio: false,

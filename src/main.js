@@ -19,11 +19,12 @@ document.querySelectorAll('.tab-btn').forEach(btn =>
 function renderBANs(containerId, banDefs) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  container.innerHTML = banDefs.map(({ label, value, lead, tooltip }) => `
+  container.innerHTML = banDefs.map(({ label, value, lead, tooltip, delta, deltaLabel }) => `
     <div class="ban-card ${lead ? 'lead' : ''}"
          ${tooltip ? `data-tooltip="${tooltip}"` : ''}>
       <div class="ban-label">${label}</div>
       <div class="ban-value">${value}</div>
+      ${delta !== undefined ? `<div class="ban-delta ${delta >= 0 ? 'pos' : 'neg'}">${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)}%${deltaLabel ? ' ' + deltaLabel : ''}</div>` : ''}
     </div>
   `).join('');
 }
