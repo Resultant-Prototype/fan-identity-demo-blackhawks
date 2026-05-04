@@ -125,14 +125,14 @@
     .p3rl-teaser-icon { font-size: 24px; }
     .p3rl-teaser-text { font-size: 14px; font-weight: 500; }
     #match-banner {
-      background: linear-gradient(135deg, var(--navy) 0%, #243b6e 100%);
+      background: linear-gradient(135deg, #CF0A2C 0%, #1A1A1A 100%);
       color: var(--white); border-radius: var(--radius);
       padding: 18px 24px; margin-bottom: 20px;
       display: flex; flex-wrap: wrap; align-items: center; gap: 24px;
       box-shadow: var(--shadow-md);
     }
     .match-banner-headline { font-size: 20px; font-weight: 700; }
-    .match-banner-headline span { color: var(--teal); }
+    .match-banner-headline span { color: #FFD090; }
     .match-stats { display: flex; gap: 24px; flex-wrap: wrap; }
     .match-stat { font-size: 13px; color: rgba(255,255,255,.75); }
     .match-stat strong { color: var(--white); }
@@ -237,3 +237,6 @@
   background: var(--gray-100); padding: 1px 5px;
   border-radius: 3px; font-size: 11px;
 }
+
+/* Gate markers belong to the entry-volume chart only */
+#t2-sectionHeatmap .gate-markers { display: none; }

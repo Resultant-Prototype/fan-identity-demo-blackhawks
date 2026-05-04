@@ -48,11 +48,19 @@ const stadiumContent = fs.existsSync(svgPath)
   ? fs.readFileSync(svgPath, 'utf8')
   : `<div class="venue-placeholder"><p>Venue diagram</p><p class="venue-placeholder-sub">Add <code>${svgSlug}-stadium.svg</code> to the repo root and run <code>node build.js</code> to enable this chart.</p></div>`;
 
+// Section heatmap gets a copy with renamed IDs so duplicate defs don't collide in the DOM
+const sectionContent = stadiumContent
+  .replace(/id="field-clip"/g,     'id="field-clip-s"')
+  .replace(/url\(#field-clip\)/g,  'url(#field-clip-s)')
+  .replace(/id="svg-arrow"/g,      'id="svg-arrow-s"')
+  .replace(/url\(#svg-arrow\)/g,   'url(#svg-arrow-s)');
+
 // ── Assemble output ────────────────────────────
 const output = shell
   .replace('{{STYLE}}',                      () => style)
   .replace('{{SCRIPT}}',                     () => script)
   .replace(/\{\{STADIUM_SVG\}\}/g,           () => stadiumContent)
+  .replace(/\{\{SECTION_SVG\}\}/g,           () => sectionContent)
   .replace(/\{\{PAGE_TITLE\}\}/g,            `Fan Identity Resolution Demo — ${TEAM.orgName}`)
   .replace(/\{\{TEAM_LOGO_FILE\}\}/g,        TEAM.logoFile)
   .replace(/\{\{TEAM_SHORT_NAME\}\}/g,       TEAM.shortName)

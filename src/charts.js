@@ -6,6 +6,9 @@ function destroyChart(id) {
   if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
 }
 
+// Derived from VENUE.sections — keeps section coloring in sync with data generation
+const SEAT_SECTIONS = VENUE.sections;
+
 Chart.defaults.font.family = "'Lexend Deca', system-ui, sans-serif";
 Chart.defaults.font.size = 12;
 Chart.defaults.color = '#6B7280';
@@ -1031,13 +1034,14 @@ function renderTab2() {
   const zoneAvg   = {};
   SEAT_SECTIONS.forEach(z => { zoneAvg[z] = zoneCnt[z] > 0 ? zoneRev[z] / zoneCnt[z] : 0; });
   const maxAvg = Math.max(...Object.values(zoneAvg));
-  // Warm heat map: cream(255,248,225) → amber(255,140,0) → Blackhawks red(207,10,44)
+  // Warm heat map: light amber(255,224,130) → orange(255,140,0) → Blackhawks red(207,10,44)
+  // Floor is visibly tinted so low-value zones read against the white card background
   const sectionColorScale = v => {
     const t = maxAvg > 0 ? Math.pow(v / maxAvg, 0.75) : 0;
     let r, g, b;
     if (t <= 0.5) {
       const u = t * 2;
-      r = 255; g = Math.round(248 + u * (140 - 248)); b = Math.round(225 + u * (0 - 225));
+      r = 255; g = Math.round(224 + u * (140 - 224)); b = Math.round(130 + u * (0 - 130));
     } else {
       const u = (t - 0.5) * 2;
       r = Math.round(255 + u * (207 - 255)); g = Math.round(140 + u * (10 - 140)); b = Math.round(u * 44);
@@ -1047,6 +1051,9 @@ function renderTab2() {
 
   const sectionHost = document.getElementById('t2-sectionHeatmap');
   if (sectionHost) {
+    // Gate layer is irrelevant to revenue — hide it so sections are the only signal
+    sectionHost.querySelectorAll('.gate-markers').forEach(el => { el.style.display = 'none'; });
+
     sectionHost.querySelectorAll('.section-zone').forEach(el => {
       const zone   = el.dataset.zone;
       const rev    = zoneRev[zone] || 0;
@@ -1054,7 +1061,8 @@ function renderTab2() {
       const perFan = zoneAvg[zone] || 0;
       const isDark = cnt > 0 && perFan > maxAvg * 0.38; // amber+ range → white text
 
-      el.setAttribute('fill', cnt > 0 ? sectionColorScale(perFan) : '#E9ECEF');
+      el.setAttribute('fill', cnt > 0 ? sectionColorScale(perFan) : '#EBEBEB');
+      el.setAttribute('fill-opacity', cnt > 0 ? '1' : '0.35');
       if (cnt > 0) el.style.cursor = 'pointer';
 
       // Zone two-line label: zone name + avg value

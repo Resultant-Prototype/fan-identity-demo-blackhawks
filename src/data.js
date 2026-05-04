@@ -224,6 +224,14 @@ const FNB_CATS     = ['food','beer_wine','non_alc'];
 const TICKET_TYPES = ['stm','single_game','secondary'];
 const TKT_WEIGHTS  = [55, 30, 15];
 
+// Price multiplier by seating zone — reflects real-world tiered pricing
+// Parallel to VENUE.sections order; suites/premium zones cost 3-4x upper bowl
+// Index: 0=300L Upper, 1=SRO, 2=200L Lexus, 3=ADA, 4=Suites, 5=100L Lower
+const SECTION_PRICE_MULT_ARR = [0.60, 0.35, 1.55, 0.80, 3.80, 1.90];
+const SECTION_PRICE_MULT = Object.fromEntries(
+  VENUE.sections.map((s, i) => [s, SECTION_PRICE_MULT_ARR[i] ?? 1.0])
+);
+
 // 7 segments — total 3,000, linked = 960+570+390+252 = 2,172
 const SEGMENTS = [
   { count: 960, sources:['TICKET','SCAN','FNB'], linked:true  },
@@ -251,10 +259,11 @@ function generateFans() {
       const games_purchased = hasTkt
         ? (ticket_type === 'stm' ? SCHEDULE_PRESET.homeGames : 1 + (seed % 12))
         : null;
+      const _sectionMult   = hasTkt ? (SECTION_PRICE_MULT[seat_section] ?? 1.0) : 1.0;
       const ticket_spend   = hasTkt
-        ? (ticket_type === 'stm'
+        ? Math.round((ticket_type === 'stm'
             ? 2500 + (seed % 2500)
-            : games_purchased * (55 + (seed % 80)))
+            : games_purchased * (55 + (seed % 80))) * _sectionMult)
         : null;
       const games_attended = hasScan
         ? (hasTkt && ticket_type === 'stm'
