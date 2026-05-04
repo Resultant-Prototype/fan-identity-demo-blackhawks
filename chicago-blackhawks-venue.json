@@ -1,0 +1,104 @@
+{
+  "schema_version": "1.0",
+  "sport": "nhl",
+  "team": {
+    "name": "Chicago Blackhawks",
+    "short_name": "Blackhawks",
+    "slug": "chicago-blackhawks",
+    "stm_label": "Blackhawks Membership"
+  },
+  "identity": {
+    "primary_hex": "#CF0A2C",
+    "secondary_hex": "#000000",
+    "ticketing_vendor": "Ticketmaster",
+    "scan_vendor": "Ticketmaster",
+    "fnb_vendor": "Levy Restaurants"
+  },
+  "venue": {
+    "name": "United Center",
+    "capacity": 19717
+  },
+  "svg": {
+    "viewbox": "0 0 900 800",
+    "sport_geometry": "hockey",
+    "anchors": {
+      "center": [450, 390]
+    },
+    "zones": [
+      {
+        "name": "300 Level – Upper Bowl",
+        "data_zone": "300 Level – Upper Bowl",
+        "layer": 1,
+        "fill": "#5A5A5A",
+        "suite_level": false,
+        "section_ids": ["301-334"],
+        "path": [{"x":180,"y":130},{"x":360,"y":80},{"x":540,"y":80},{"x":720,"y":130},{"x":760,"y":280},{"x":760,"y":500},{"x":720,"y":650},{"x":540,"y":700},{"x":360,"y":700},{"x":180,"y":650},{"x":140,"y":500},{"x":140,"y":280}]
+      },
+      {
+        "name": "Standing Room Only",
+        "data_zone": "Standing Room Only",
+        "layer": 1,
+        "fill": "#3C3C3C",
+        "suite_level": false,
+        "section_ids": ["SRO"],
+        "path": [{"x":165,"y":145},{"x":360,"y":95},{"x":540,"y":95},{"x":735,"y":145},{"x":750,"y":280},{"x":750,"y":500},{"x":735,"y":640},{"x":540,"y":685},{"x":360,"y":685},{"x":165,"y":640},{"x":155,"y":500},{"x":155,"y":280}]
+      },
+      {
+        "name": "200 Level – Lexus Club",
+        "data_zone": "200 Level – Lexus Club",
+        "layer": 2,
+        "fill": "#8B1A1A",
+        "suite_level": false,
+        "section_ids": ["201-234"],
+        "path": [{"x":210,"y":175},{"x":360,"y":135},{"x":540,"y":135},{"x":690,"y":175},{"x":715,"y":290},{"x":715,"y":490},{"x":690,"y":610},{"x":540,"y":648},{"x":360,"y":648},{"x":210,"y":610},{"x":185,"y":490},{"x":185,"y":290}]
+      },
+      {
+        "name": "Handicap / ADA",
+        "data_zone": "Handicap / ADA",
+        "layer": 2,
+        "fill": "#005B9A",
+        "suite_level": false,
+        "section_ids": ["HC"],
+        "path": [{"x":215,"y":180},{"x":260,"y":160},{"x":260,"y":215},{"x":215,"y":235}]
+      },
+      {
+        "name": "Banner Level Suites & Lofts",
+        "data_zone": "Banner Level Suites & Lofts",
+        "layer": 2,
+        "fill": "#4A1010",
+        "suite_level": true,
+        "section_ids": ["banner_seats","banner_suites_lofts"],
+        "path": [{"x":218,"y":188},{"x":360,"y":155},{"x":540,"y":155},{"x":682,"y":188},{"x":700,"y":295},{"x":700,"y":485},{"x":682,"y":595},{"x":540,"y":628},{"x":360,"y":628},{"x":218,"y":595},{"x":200,"y":485},{"x":200,"y":295}]
+      },
+      {
+        "name": "100 Level – Lower Bowl",
+        "data_zone": "100 Level – Lower Bowl",
+        "layer": 3,
+        "fill": "#CF0A2C",
+        "suite_level": false,
+        "section_ids": ["101-122"],
+        "path": [{"x":255,"y":230},{"x":360,"y":200},{"x":540,"y":200},{"x":645,"y":230},{"x":665,"y":330},{"x":665,"y":450},{"x":645,"y":555},{"x":540,"y":585},{"x":360,"y":585},{"x":255,"y":555},{"x":235,"y":450},{"x":235,"y":330}]
+      }
+    ],
+    "gates": [
+      {"name":"Gate 2","data_gate":"Gate 2","cx":235,"cy":50,"label_side":"top","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 3","data_gate":"Gate 3","cx":390,"cy":50,"label_side":"top","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 3½ – American Express Entrance","data_gate":"Gate 3½ – American Express Entrance","cx":620,"cy":50,"label_side":"top","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 4 – Atrium","data_gate":"Gate 4 – Atrium","cx":820,"cy":390,"label_side":"right","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 5","data_gate":"Gate 5","cx":720,"cy":755,"label_side":"bottom","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 6","data_gate":"Gate 6","cx":540,"cy":755,"label_side":"bottom","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 6½ – Suite VIP Entrance","data_gate":"Gate 6½ – Suite VIP Entrance","cx":450,"cy":755,"label_side":"bottom","fill":"#4A1010","is_premium":true},
+      {"name":"Gate 7","data_gate":"Gate 7","cx":340,"cy":755,"label_side":"bottom","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 8","data_gate":"Gate 8","cx":80,"cy":600,"label_side":"left","fill":"#CF0A2C","is_premium":false},
+      {"name":"Gate 2½ – Suite VIP Entrance","data_gate":"Gate 2½ – Suite VIP Entrance","cx":80,"cy":200,"label_side":"left","fill":"#4A1010","is_premium":true}
+    ],
+    "gate_by_zone_weights": {
+      "300 Level – Upper Bowl":        [4,4,3,2,2,3,1,3,1,1],
+      "Standing Room Only":               [3,3,3,2,2,3,1,3,1,1],
+      "200 Level – Lexus Club":       [3,3,2,2,2,3,2,4,1,2],
+      "Handicap / ADA":                   [2,2,2,2,2,2,1,2,1,1],
+      "Banner Level Suites & Lofts":      [1,1,1,1,1,1,5,1,1,5],
+      "100 Level – Lower Bowl":       [4,3,2,3,3,4,1,4,2,1]
+    }
+  }
+}

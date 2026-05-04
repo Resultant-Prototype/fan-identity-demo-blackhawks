@@ -1,0 +1,392 @@
+{
+  "UPCOMING_PACING": [
+    {
+      "opponent": "Minnesota Wild",
+      "date": "2026-05-06",
+      "daysUntil": 2,
+      "pctSold": 78
+    },
+    {
+      "opponent": "St. Louis Blues",
+      "date": "2026-05-08",
+      "daysUntil": 4,
+      "pctSold": 72
+    },
+    {
+      "opponent": "Nashville Predators",
+      "date": "2026-05-10",
+      "daysUntil": 6,
+      "pctSold": 69
+    },
+    {
+      "opponent": "Detroit Red Wings",
+      "date": "2026-05-13",
+      "daysUntil": 9,
+      "pctSold": 75
+    },
+    {
+      "opponent": "Colorado Avalanche",
+      "date": "2026-05-15",
+      "daysUntil": 11,
+      "pctSold": 82
+    },
+    {
+      "opponent": "Winnipeg Jets",
+      "date": "2026-05-17",
+      "daysUntil": 13,
+      "pctSold": 70
+    },
+    {
+      "opponent": "Toronto Maple Leafs",
+      "date": "2026-05-20",
+      "daysUntil": 16,
+      "pctSold": 88
+    },
+    {
+      "opponent": "Dallas Stars",
+      "date": "2026-05-22",
+      "daysUntil": 18,
+      "pctSold": 74
+    },
+    {
+      "opponent": "Vancouver Canucks",
+      "date": "2026-05-24",
+      "daysUntil": 20,
+      "pctSold": 68
+    },
+    {
+      "opponent": "New York Rangers",
+      "date": "2026-05-27",
+      "daysUntil": 23,
+      "pctSold": 85
+    },
+    {
+      "opponent": "Pittsburgh Penguins",
+      "date": "2026-05-29",
+      "daysUntil": 25,
+      "pctSold": 80
+    },
+    {
+      "opponent": "Boston Bruins",
+      "date": "2026-06-01",
+      "daysUntil": 28,
+      "pctSold": 83
+    }
+  ],
+  "SERIES_SCHEDULE": [
+    {
+      "start": "2025-10-11",
+      "opp": "Detroit Red Wings",
+      "lg": "Central",
+      "rival": true,
+      "n": 3,
+      "tier": "featured",
+      "promo": "giveaway",
+      "promoLabel": "Opening Night Jersey Giveaway"
+    },
+    {
+      "start": "2025-10-18",
+      "opp": "Nashville Predators",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-10-25",
+      "opp": "Minnesota Wild",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-11-01",
+      "opp": "Toronto Maple Leafs",
+      "lg": "Atlantic",
+      "rival": true,
+      "n": 2,
+      "tier": "featured",
+      "promo": "theme_night",
+      "promoLabel": "Hockey Fights Cancer Night"
+    },
+    {
+      "start": "2025-11-07",
+      "opp": "Colorado Avalanche",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "giveaway",
+      "promoLabel": "Bobblehead Giveaway"
+    },
+    {
+      "start": "2025-11-14",
+      "opp": "St. Louis Blues",
+      "lg": "Central",
+      "rival": true,
+      "n": 3,
+      "tier": "featured",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-11-22",
+      "opp": "Winnipeg Jets",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-11-29",
+      "opp": "Boston Bruins",
+      "lg": "Atlantic",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "giveaway",
+      "promoLabel": "Winter Classic Replica Jersey"
+    },
+    {
+      "start": "2025-12-06",
+      "opp": "New York Rangers",
+      "lg": "Metropolitan",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-12-13",
+      "opp": "Dallas Stars",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2025-12-19",
+      "opp": "Vegas Golden Knights",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "theme_night",
+      "promoLabel": "Holiday Hat Giveaway"
+    },
+    {
+      "start": "2025-12-27",
+      "opp": "Minnesota Wild",
+      "lg": "Central",
+      "rival": false,
+      "n": 2,
+      "tier": "featured",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-01-03",
+      "opp": "Pittsburgh Penguins",
+      "lg": "Metropolitan",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-01-10",
+      "opp": "Edmonton Oilers",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "giveaway",
+      "promoLabel": "Scarf Giveaway"
+    },
+    {
+      "start": "2026-01-17",
+      "opp": "Anaheim Ducks",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-01-22",
+      "opp": "Detroit Red Wings",
+      "lg": "Atlantic",
+      "rival": true,
+      "n": 2,
+      "tier": "featured",
+      "promo": "theme_night",
+      "promoLabel": "Alumni Night"
+    },
+    {
+      "start": "2026-01-31",
+      "opp": "Washington Capitals",
+      "lg": "Metropolitan",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-02-07",
+      "opp": "Nashville Predators",
+      "lg": "Central",
+      "rival": false,
+      "n": 2,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-02-14",
+      "opp": "Vancouver Canucks",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "theme_night",
+      "promoLabel": "Valentine's Day Giveaway"
+    },
+    {
+      "start": "2026-02-20",
+      "opp": "St. Louis Blues",
+      "lg": "Central",
+      "rival": true,
+      "n": 2,
+      "tier": "featured",
+      "promo": "giveaway",
+      "promoLabel": "Blackhawks Toque Giveaway"
+    },
+    {
+      "start": "2026-02-27",
+      "opp": "Calgary Flames",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-03-05",
+      "opp": "Carolina Hurricanes",
+      "lg": "Metropolitan",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-03-10",
+      "opp": "Winnipeg Jets",
+      "lg": "Central",
+      "rival": false,
+      "n": 2,
+      "tier": "select",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-03-17",
+      "opp": "Colorado Avalanche",
+      "lg": "Central",
+      "rival": false,
+      "n": 2,
+      "tier": "featured",
+      "promo": "theme_night",
+      "promoLabel": "St. Patrick's Day Night"
+    },
+    {
+      "start": "2026-03-24",
+      "opp": "Seattle Kraken",
+      "lg": "Pacific",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-03-28",
+      "opp": "Florida Panthers",
+      "lg": "Atlantic",
+      "rival": false,
+      "n": 1,
+      "tier": "select",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-04-04",
+      "opp": "Tampa Bay Lightning",
+      "lg": "Atlantic",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-04-09",
+      "opp": "Dallas Stars",
+      "lg": "Central",
+      "rival": false,
+      "n": 1,
+      "tier": "standard",
+      "promo": "null",
+      "promoLabel": null
+    },
+    {
+      "start": "2026-04-14",
+      "opp": "Minnesota Wild",
+      "lg": "Central",
+      "rival": false,
+      "n": 2,
+      "tier": "featured",
+      "promo": "giveaway",
+      "promoLabel": "Season Finale Poster Giveaway"
+    }
+  ],
+  "HOME_STATES": [
+    "IL",
+    "WI",
+    "IN",
+    "MI",
+    "MN",
+    "OH",
+    "MO",
+    "NY",
+    "FL",
+    "PA"
+  ],
+  "STATE_WEIGHTS": [
+    350,
+    90,
+    75,
+    60,
+    45,
+    35,
+    30,
+    20,
+    15,
+    12
+  ]
+}
