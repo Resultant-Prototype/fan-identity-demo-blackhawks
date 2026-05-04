@@ -7,7 +7,7 @@ const TEAM = {
   sport:           'nhl',
   orgName:         'Chicago Blackhawks',
   shortName:       'Blackhawks',
-  logoFile:        'STUB_LOGO_FILE.png',
+  logoFile:        'blackhawks-logo.png',
   stmLabel:        'Blackhawks Membership',
   ticketingVendor: 'Ticketmaster',
   scanVendor:      'Ticketmaster',
