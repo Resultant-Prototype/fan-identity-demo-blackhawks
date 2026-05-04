@@ -78,6 +78,166 @@ def classify_section(sid: str) -> str:
     return '300 Level Upper'
 
 
+# ── Field / rink overlays ──────────────────────────────────────
+
+def _build_field_overlay(sport: str, fx1: float, fy1: float,
+                         fw: float, fh: float, corner_r: float) -> list:
+    fx2, fy2 = fx1 + fw, fy1 + fh
+    mid_x, mid_y = (fx1 + fx2) / 2, (fy1 + fy2) / 2
+
+    if sport == 'hockey' or sport == 'nhl':
+        return _hockey_rink(fx1, fy1, fx2, fy2, fw, fh, mid_x, mid_y, corner_r)
+    elif sport == 'basketball' or sport == 'nba':
+        return _basketball_court(fx1, fy1, fx2, fy2, fw, fh, mid_x, mid_y, corner_r)
+    else:
+        return _football_or_baseball_field(fx1, fy1, fx2, fy2, fw, fh, mid_x, corner_r, sport)
+
+
+def _hockey_rink(fx1, fy1, fx2, fy2, fw, fh, mid_x, mid_y, corner_r):
+    lines = []
+    horizontal = fw >= fh  # United Center and most arenas: sections wrap all sides
+    lw = max(fw, fh)       # long dimension
+    sw = min(fw, fh)       # short dimension
+
+    lines.append(
+        f'  <rect class="hockey-ice" fill="#e8f4f8" stroke="#b0ccd6" stroke-width="1"\n'
+        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{fw:.1f}" height="{fh:.1f}"'
+        f' rx="{corner_r}" ry="{corner_r}"/>'
+    )
+
+    blue_w = max(lw * 0.007, 2.0)
+    red_w  = max(lw * 0.005, 1.5)
+    cr     = sw * 0.20   # center circle radius
+
+    if horizontal:
+        # Blue lines at 25% and 75% along x-axis
+        for bx in [fx1 + fw * 0.25, fx1 + fw * 0.75]:
+            lines.append(
+                f'  <line stroke="#0032A0" stroke-width="{blue_w:.1f}"\n'
+                f'        x1="{bx:.1f}" y1="{fy1:.1f}" x2="{bx:.1f}" y2="{fy2:.1f}"/>'
+            )
+        # Red center line
+        lines.append(
+            f'  <line stroke="#BF0000" stroke-width="{red_w:.1f}"\n'
+            f'        x1="{mid_x:.1f}" y1="{fy1:.1f}" x2="{mid_x:.1f}" y2="{fy2:.1f}"/>'
+        )
+        # Center faceoff circle
+        lines.append(
+            f'  <circle fill="none" stroke="#BF0000" stroke-width="{max(lw*0.004,1):.1f}"\n'
+            f'          cx="{mid_x:.1f}" cy="{mid_y:.1f}" r="{cr:.1f}"/>'
+        )
+        lines.append(f'  <circle fill="#BF0000" cx="{mid_x:.1f}" cy="{mid_y:.1f}" r="3"/>')
+        # Zone faceoff circles (2 per end zone)
+        dot_w = max(lw * 0.003, 1.0)
+        for ex in [fx1 + fw * 0.175, fx2 - fw * 0.175]:
+            for ey in [mid_y - fh * 0.27, mid_y + fh * 0.27]:
+                lines.append(
+                    f'  <circle fill="none" stroke="#BF0000" stroke-width="{dot_w:.1f}"\n'
+                    f'          cx="{ex:.1f}" cy="{ey:.1f}" r="{cr * 0.88:.1f}"/>'
+                )
+                lines.append(f'  <circle fill="#BF0000" cx="{ex:.1f}" cy="{ey:.1f}" r="2.5"/>')
+        # Goal crease (light blue D) and net mark at each end
+        crease_r = sw * 0.13
+        for nx in [fx1 + fw * 0.05, fx2 - fw * 0.05]:
+            lines.append(
+                f'  <circle fill="#c8ddf0" fill-opacity="0.65" stroke="#BF0000"'
+                f' stroke-width="{dot_w:.1f}"\n'
+                f'          cx="{nx:.1f}" cy="{mid_y:.1f}" r="{crease_r:.1f}"/>'
+            )
+            net_w, net_h = fw * 0.014, fh * 0.09
+            lines.append(
+                f'  <rect fill="#CC0000" fill-opacity="0.75"\n'
+                f'        x="{nx - net_w/2:.1f}" y="{mid_y - net_h/2:.1f}"'
+                f' width="{net_w:.1f}" height="{net_h:.1f}"/>'
+            )
+    else:
+        # Vertical rink orientation
+        for by in [fy1 + fh * 0.25, fy1 + fh * 0.75]:
+            lines.append(
+                f'  <line stroke="#0032A0" stroke-width="{blue_w:.1f}"\n'
+                f'        x1="{fx1:.1f}" y1="{by:.1f}" x2="{fx2:.1f}" y2="{by:.1f}"/>'
+            )
+        lines.append(
+            f'  <line stroke="#BF0000" stroke-width="{red_w:.1f}"\n'
+            f'        x1="{fx1:.1f}" y1="{mid_y:.1f}" x2="{fx2:.1f}" y2="{mid_y:.1f}"/>'
+        )
+        lines.append(
+            f'  <circle fill="none" stroke="#BF0000" stroke-width="{max(lw*0.004,1):.1f}"\n'
+            f'          cx="{mid_x:.1f}" cy="{mid_y:.1f}" r="{cr:.1f}"/>'
+        )
+        lines.append(f'  <circle fill="#BF0000" cx="{mid_x:.1f}" cy="{mid_y:.1f}" r="3"/>')
+        dot_w = max(lw * 0.003, 1.0)
+        for ey in [fy1 + fh * 0.175, fy2 - fh * 0.175]:
+            for ex in [mid_x - fw * 0.27, mid_x + fw * 0.27]:
+                lines.append(
+                    f'  <circle fill="none" stroke="#BF0000" stroke-width="{dot_w:.1f}"\n'
+                    f'          cx="{ex:.1f}" cy="{ey:.1f}" r="{cr * 0.88:.1f}"/>'
+                )
+                lines.append(f'  <circle fill="#BF0000" cx="{ex:.1f}" cy="{ey:.1f}" r="2.5"/>')
+        crease_r = sw * 0.13
+        for ny in [fy1 + fh * 0.05, fy2 - fh * 0.05]:
+            lines.append(
+                f'  <circle fill="#c8ddf0" fill-opacity="0.65" stroke="#BF0000"'
+                f' stroke-width="{dot_w:.1f}"\n'
+                f'          cx="{mid_x:.1f}" cy="{ny:.1f}" r="{crease_r:.1f}"/>'
+            )
+            net_h, net_w = fh * 0.014, fw * 0.09
+            lines.append(
+                f'  <rect fill="#CC0000" fill-opacity="0.75"\n'
+                f'        x="{mid_x - net_w/2:.1f}" y="{ny - net_h/2:.1f}"'
+                f' width="{net_w:.1f}" height="{net_h:.1f}"/>'
+            )
+    return lines
+
+
+def _basketball_court(fx1, fy1, fx2, fy2, fw, fh, mid_x, mid_y, corner_r):
+    lines = []
+    lines.append(
+        f'  <rect class="basketball-court" fill="#c8912a" stroke="#1a1a1a" stroke-width="1"\n'
+        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{fw:.1f}" height="{fh:.1f}"'
+        f' rx="{corner_r}" ry="{corner_r}"/>'
+    )
+    lines.append(
+        f'  <line stroke="#1a1a1a" stroke-width="1.5"\n'
+        f'        x1="{mid_x:.1f}" y1="{fy1:.1f}" x2="{mid_x:.1f}" y2="{fy2:.1f}"/>'
+    )
+    cr = min(fw, fh) * 0.22
+    lines.append(
+        f'  <circle fill="none" stroke="#1a1a1a" stroke-width="1.5"\n'
+        f'          cx="{mid_x:.1f}" cy="{mid_y:.1f}" r="{cr:.1f}"/>'
+    )
+    return lines
+
+
+def _football_or_baseball_field(fx1, fy1, fx2, fy2, fw, fh, mid_x, corner_r, sport):
+    lines = []
+    ez_depth = round(fw * 0.11, 1)
+    lines.append(
+        f'  <rect class="football-field" fill="#2d6e3e" stroke="none"\n'
+        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{fw:.1f}" height="{fh:.1f}"'
+        f' rx="{corner_r}" ry="{corner_r}"/>'
+    )
+    lines.append(
+        f'  <rect class="end-zone" fill="#1a5c30" stroke="none" clip-path="url(#field-clip)"\n'
+        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{ez_depth:.1f}" height="{fh:.1f}"/>'
+    )
+    lines.append(
+        f'  <rect class="end-zone" fill="#1a5c30" stroke="none" clip-path="url(#field-clip)"\n'
+        f'        x="{fx2-ez_depth:.1f}" y="{fy1:.1f}" width="{ez_depth:.1f}" height="{fh:.1f}"/>'
+    )
+    lines.append(
+        f'  <line stroke="white" stroke-width="1.5" stroke-opacity="0.5"\n'
+        f'        x1="{mid_x:.1f}" y1="{fy1:.1f}" x2="{mid_x:.1f}" y2="{fy2:.1f}"/>'
+    )
+    for frac in [0.25, 0.375, 0.625, 0.75]:
+        lx = round(fx1 + fw * frac, 1)
+        lines.append(
+            f'  <line stroke="white" stroke-width="0.75" stroke-opacity="0.3"\n'
+            f'        x1="{lx}" y1="{fy1:.1f}" x2="{lx}" y2="{fy2:.1f}"/>'
+        )
+    return lines
+
+
 # ── Main ───────────────────────────────────────────────────────
 
 def main():
@@ -257,8 +417,6 @@ def main():
     fx2, fy2 = tx(field_x2_n, field_y2_n)
     fw, fh = fx2 - fx1, fy2 - fy1
     corner_r = round(min(fw, fh) * 0.12, 1)
-    ez_depth = round(fw * 0.11, 1)   # end zone ~10% of field length each side
-    mid_x = (fx1 + fx2) / 2
 
     print(f"Field (transformed): x=[{fx1:.1f},{fx2:.1f}] y=[{fy1:.1f},{fy2:.1f}]  ratio={fw/fh:.2f}:1", file=sys.stderr)
 
@@ -316,34 +474,9 @@ def main():
             f'           points="{tpts}"/>'
         )
 
+    sport = venue.get('sport', 'football') if venue else 'football'
     lines += ['', '  <!-- FIELD OVERLAY -->']
-    # Main grass
-    lines.append(
-        f'  <rect class="football-field" fill="#2d6e3e" stroke="none"\n'
-        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{fw:.1f}" height="{fh:.1f}"'
-        f' rx="{corner_r}" ry="{corner_r}"/>'
-    )
-    # West end zone
-    lines.append(
-        f'  <rect class="end-zone" fill="#1a5c30" stroke="none" clip-path="url(#field-clip)"\n'
-        f'        x="{fx1:.1f}" y="{fy1:.1f}" width="{ez_depth:.1f}" height="{fh:.1f}"/>'
-    )
-    # East end zone
-    lines.append(
-        f'  <rect class="end-zone" fill="#1a5c30" stroke="none" clip-path="url(#field-clip)"\n'
-        f'        x="{fx2-ez_depth:.1f}" y="{fy1:.1f}" width="{ez_depth:.1f}" height="{fh:.1f}"/>'
-    )
-    # Midfield
-    lines.append(
-        f'  <line stroke="white" stroke-width="1.5" stroke-opacity="0.5"\n'
-        f'        x1="{mid_x:.1f}" y1="{fy1:.1f}" x2="{mid_x:.1f}" y2="{fy2:.1f}"/>'
-    )
-    for frac in [0.25, 0.375, 0.625, 0.75]:
-        lx = round(fx1 + fw * frac, 1)
-        lines.append(
-            f'  <line stroke="white" stroke-width="0.75" stroke-opacity="0.3"\n'
-            f'        x1="{lx}" y1="{fy1:.1f}" x2="{lx}" y2="{fy2:.1f}"/>'
-        )
+    lines += _build_field_overlay(sport, fx1, fy1, fw, fh, corner_r)
 
     gate_src = config_gates if config_gates else [
         (name, *gate_pos(angle), fill, side)
