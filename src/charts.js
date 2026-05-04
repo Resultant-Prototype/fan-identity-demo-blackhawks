@@ -535,6 +535,9 @@ function renderTab1() {
 
   const host = document.getElementById('t1-gateHeatmap');
   if (host) {
+    // Sections are context, not signal — keep them neutral so gate bubbles dominate
+    host.querySelectorAll('.section-zone').forEach(el => el.setAttribute('fill', '#E5E7EB'));
+
     host.querySelectorAll('.gate-marker').forEach(el => {
       const gate   = el.dataset.gate;
       const count  = gateCounts[gate] || 0;
@@ -1028,11 +1031,17 @@ function renderTab2() {
   const zoneAvg   = {};
   SEAT_SECTIONS.forEach(z => { zoneAvg[z] = zoneCnt[z] > 0 ? zoneRev[z] / zoneCnt[z] : 0; });
   const maxAvg = Math.max(...Object.values(zoneAvg));
+  // Warm heat map: cream(255,248,225) → amber(255,140,0) → Blackhawks red(207,10,44)
   const sectionColorScale = v => {
-    const t = maxAvg > 0 ? v / maxAvg : 0;
-    const r = Math.round(255 - t * (255 - 0));
-    const g = Math.round(255 - t * (255 - 48));
-    const b = Math.round(255 - t * (255 - 135));
+    const t = maxAvg > 0 ? Math.pow(v / maxAvg, 0.75) : 0;
+    let r, g, b;
+    if (t <= 0.5) {
+      const u = t * 2;
+      r = 255; g = Math.round(248 + u * (140 - 248)); b = Math.round(225 + u * (0 - 225));
+    } else {
+      const u = (t - 0.5) * 2;
+      r = Math.round(255 + u * (207 - 255)); g = Math.round(140 + u * (10 - 140)); b = Math.round(u * 44);
+    }
     return `rgb(${r},${g},${b})`;
   };
 
@@ -1043,9 +1052,10 @@ function renderTab2() {
       const rev    = zoneRev[zone] || 0;
       const cnt    = zoneCnt[zone] || 0;
       const perFan = zoneAvg[zone] || 0;
-      const isDark = cnt > 0 && perFan > maxAvg * 0.4;
+      const isDark = cnt > 0 && perFan > maxAvg * 0.38; // amber+ range → white text
 
-      el.setAttribute('fill', cnt > 0 ? sectionColorScale(perFan) : '#e8e4dc');
+      el.setAttribute('fill', cnt > 0 ? sectionColorScale(perFan) : '#E9ECEF');
+      if (cnt > 0) el.style.cursor = 'pointer';
 
       // Zone two-line label: zone name + avg value
       // Always remove old label first — tspan structure requires full rebuild each render
@@ -1061,7 +1071,8 @@ function renderTab2() {
 
           const cx    = bb.x + bb.width  / 2;
           const cy    = bb.y + bb.height / 2;
-          const color = isDark ? 'white' : '#003087';
+          // cream zones need dark text; amber/red zones need white
+          const color = isDark ? 'white' : '#111827';
 
           const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
           lbl.id = lid;
@@ -1091,12 +1102,15 @@ function renderTab2() {
       }
     });
 
-    // Styled tooltip — event delegation
+    // Styled tooltip — remove previous listeners to prevent accumulation on re-render
     document.querySelectorAll('.glf-zone-tip').forEach(t => t.remove());
     const zoneTip = document.createElement('div');
     zoneTip.className = 'glf-zone-tip';
-    zoneTip.style.cssText = 'position:fixed;background:rgba(10,20,50,0.97);color:rgba(255,255,255,0.92);padding:9px 13px;border-radius:6px;font-size:11.5px;line-height:1.7;pointer-events:none;display:none;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.40);border:1px solid rgba(192,17,31,0.28);white-space:nowrap;';
+    zoneTip.style.cssText = 'position:fixed;background:rgba(10,20,50,0.97);color:rgba(255,255,255,0.92);padding:11px 15px;border-radius:7px;font-size:11.5px;line-height:1.7;pointer-events:none;display:none;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.45);border:1px solid rgba(207,10,44,0.28);border-left:3px solid #CF0A2C;min-width:220px;max-width:280px;';
     document.body.appendChild(zoneTip);
+
+    if (sectionHost._zMoveFn)  sectionHost.removeEventListener('mousemove',  sectionHost._zMoveFn);
+    if (sectionHost._zLeaveFn) sectionHost.removeEventListener('mouseleave', sectionHost._zLeaveFn);
 
     const TICKET_TYPE_LABEL = {
       stm:          TEAM.stmLabel,
@@ -1104,7 +1118,7 @@ function renderTab2() {
       secondary:    'Secondary Market',
     };
 
-    sectionHost.addEventListener('mousemove', evt => {
+    sectionHost._zMoveFn = evt => {
       const tgt = evt.target.closest('.section-zone');
       if (!tgt) { zoneTip.style.display = 'none'; return; }
       const zone   = tgt.dataset.zone;
@@ -1114,39 +1128,42 @@ function renderTab2() {
 
       let html;
       if (cnt > 0) {
-        const top10 = fans2
+        const top5 = fans2
           .filter(x => x.seat_section === zone && x.ticket_spend != null)
           .sort((a, b) => b.ticket_spend - a.ticket_spend)
-          .slice(0, 10);
+          .slice(0, 5);
 
-        const rows = top10.map((fan, i) => {
+        const rows = top5.map((fan, i) => {
           const label = TICKET_TYPE_LABEL[fan.ticket_type] || fan.ticket_type;
-          return `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:2px;white-space:normal">
+          return `<div style="display:flex;justify-content:space-between;gap:16px;margin-top:3px">
             <span style="color:rgba(255,255,255,0.55)">${i + 1}. ${label}</span>
-            <span style="color:rgba(255,255,255,0.88);font-weight:600">${fmt.currency(fan.ticket_spend)}</span>
+            <span style="color:rgba(255,255,255,0.90);font-weight:600">${fmt.currency(fan.ticket_spend)}</span>
           </div>`;
         }).join('');
 
-        const sep = top10.length > 0
-          ? `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:7px 0 5px"></div>
+        const sep = top5.length > 0
+          ? `<div style="border-top:1px solid rgba(255,255,255,0.12);margin:8px 0 5px"></div>
              <div style="font-size:9px;color:rgba(255,255,255,0.40);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px">Top fans by spend</div>
              ${rows}`
           : '';
 
-        html = `<strong>${zone}</strong><br>
-          ${fmt.num(cnt)} fans &nbsp;·&nbsp; ${fmt.currency(Math.round(perFan))} avg / fan<br>
-          Total revenue: ${fmt.currency(Math.round(rev))}
+        html = `<strong style="font-size:12px">${zone}</strong>
+          <div style="color:rgba(255,255,255,0.65);font-size:10px;margin-top:2px">${fmt.num(cnt)} fans &nbsp;·&nbsp; ${fmt.currency(Math.round(perFan))} avg / fan</div>
+          <div style="color:rgba(255,255,255,0.80);font-size:10px">Total revenue: ${fmt.currency(Math.round(rev))}</div>
           ${sep}`;
       } else {
-        html = `<strong>${zone}</strong><br>No data`;
+        html = `<strong style="font-size:12px">${zone}</strong><div style="color:rgba(255,255,255,0.50);margin-top:3px">No data</div>`;
       }
 
       zoneTip.innerHTML = html;
       zoneTip.style.display = 'block';
-      zoneTip.style.left = (evt.clientX + 14) + 'px';
-      zoneTip.style.top  = (evt.clientY - 36) + 'px';
-    });
-    sectionHost.addEventListener('mouseleave', () => { zoneTip.style.display = 'none'; });
+      const _tipW = 280, _tipH = 220;
+      zoneTip.style.left = Math.min(evt.clientX + 16, window.innerWidth  - _tipW - 8) + 'px';
+      zoneTip.style.top  = Math.max(8, Math.min(evt.clientY - 40, window.innerHeight - _tipH - 8)) + 'px';
+    };
+    sectionHost._zLeaveFn = () => { zoneTip.style.display = 'none'; };
+    sectionHost.addEventListener('mousemove',  sectionHost._zMoveFn);
+    sectionHost.addEventListener('mouseleave', sectionHost._zLeaveFn);
   }
 }
 
